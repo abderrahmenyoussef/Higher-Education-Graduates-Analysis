@@ -1,0 +1,261 @@
+/*-- scss:defaults --*/
+
+// Colors
+$primary: #3b82f6;
+$secondary: #8b5cf6;
+$success: #10b981;
+$danger: #ef4444;
+$warning: #f59e0b;
+$info: #06b6d4;
+$light: #f3f4f6;
+$dark: #1f2937;
+
+// Fonts
+$font-family-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$presentation-heading-font: 'Poppins', sans-serif;
+$presentation-font-size-root: 38px;
+
+// Headings
+$presentation-h1-font-size: 2.5em;
+$presentation-h2-font-size: 1.8em;
+$presentation-h3-font-size: 1.4em;
+
+/*-- scss:rules --*/
+
+// Import Google Fonts
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Poppins:wght@600;700;800&display=swap');
+
+// General styles
+.reveal {
+  font-family: $font-family-sans-serif;
+  font-weight: 400;
+  color: $dark;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+  font-family: $presentation-heading-font;
+  font-weight: 700;
+  text-transform: none;
+  color: $dark;
+}
+
+// Title slide
+.reveal .title {
+  font-size: 2.8em;
+  font-weight: 800;
+  color: white;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.reveal .subtitle {
+  font-size: 1.4em;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 0.5em;
+}
+
+.reveal .author {
+  font-size: 1.1em;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 1.5em;
+}
+
+.reveal .date {
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+// Section headers
+.reveal .slide-background.has-dark-background {
+  h1, h2, h3, .r-fit-text {
+    color: white !important;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+  }
+}
+
+// Callouts
+.callout {
+  border-radius: 10px;
+  padding: 1.2em;
+  margin: 1em 0;
+  border-left: 5px solid;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.callout-note {
+  background-color: #dbeafe;
+  border-left-color: $info;
+}
+
+.callout-tip {
+  background-color: #d1fae5;
+  border-left-color: $success;
+}
+
+.callout-warning {
+  background-color: #fef3c7;
+  border-left-color: $warning;
+}
+
+.callout-important {
+  background-color: #fecaca;
+  border-left-color: $danger;
+}
+
+.callout-title {
+  font-weight: 600;
+  font-size: 1.1em;
+  margin-bottom: 0.5em;
+}
+
+// Tables
+.reveal table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em auto;
+  font-size: 0.85em;
+}
+
+.reveal table th {
+  font-weight: 600;
+  padding: 0.8em 0.6em;
+  border-bottom: 2px solid $primary;
+}
+
+.reveal table td {
+  padding: 0.6em 0.6em;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.reveal table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+// Code blocks
+.reveal pre {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 0.7em;
+}
+
+.reveal code {
+  background-color: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  color: #be185d;
+}
+
+// Lists
+.reveal ul,
+.reveal ol {
+  margin-left: 1.5em;
+}
+
+.reveal li {
+  margin-bottom: 0.5em;
+}
+
+// Fragments
+.reveal .fragment.highlight-current-blue.visible.current-fragment {
+  color: $primary;
+}
+
+// Custom classes
+.center {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.smaller {
+  font-size: 0.85em;
+}
+
+.r-fit-text {
+  font-weight: 800;
+}
+
+// Columns
+.reveal .columns {
+  display: flex;
+  gap: 2em;
+}
+
+.reveal .column {
+  flex: 1;
+}
+
+// Progress bar
+.reveal .progress {
+  background: rgba(0, 0, 0, 0.2);
+  height: 4px;
+}
+
+.reveal .progress span {
+  background: $primary;
+}
+
+// Slide numbers
+.reveal .slide-number {
+  background-color: rgba(59, 130, 246, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+// Panel tabset
+.panel-tabset {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.panel-tabset .nav-tabs {
+  background-color: #f9fafb;
+  border-bottom: 2px solid $primary;
+}
+
+.panel-tabset .nav-link {
+  color: $dark;
+  font-weight: 600;
+}
+
+.panel-tabset .nav-link.active {
+  background-color: $primary;
+  color: white;
+}
+
+// Mermaid diagrams
+.mermaid {
+  font-size: 0.9em;
+}
+
+// Scrollable slides
+.scrollable {
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal .slides section .fragment {
+  animation: fadeIn 0.5s ease-in-out;
+}

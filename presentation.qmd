@@ -1,0 +1,1026 @@
+---
+title: "Analyse Statistique des Diplômés"
+subtitle: "Enseignement Supérieur Public Tunisien"
+author: "Abderrahmen Youssef - Groupe DS4"
+date: "Décembre 2025"
+format:
+  revealjs:
+    theme: [default, custom.scss]
+    transition: slide
+    background-transition: fade
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: img/logo.png
+    css: styles.css
+    code-fold: true
+    code-tools: true
+    scrollable: true
+    navigation-mode: vertical
+    controls: true
+    progress: true
+    history: true
+    center: true
+    incremental: false
+    mermaid:
+      theme: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r setup, include=FALSE}
+# Chargement des bibliothèques
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+library(gt)
+library(plotly)
+
+# Définir le thème par défaut
+theme_set(theme_minimal(base_size = 12))
+
+# Charger les données fusionnées
+diplomes_final <- read.csv("dataset/merged/diplomes_fusionnes.csv", encoding = "UTF-8")
+```
+
+## {.center data-background="#1e3a8a"}
+
+::: {.r-fit-text}
+**Comprendre la production de diplômés en Tunisie**
+:::
+
+::: {.fragment}
+Analyse par domaines, spécialités et établissements
+:::
+
+::: {.fragment}
+📊 55,670 diplômés | 14 universités | 22 domaines
+:::
+
+# Problématique {data-background="#0f172a"}
+
+## Question de recherche {.smaller}
+
+::: {.incremental}
+- Comment se **répartissent** les diplômés de l'enseignement supérieur public en Tunisie ?
+- Quels **déséquilibres** peut-on identifier selon :
+  - Les domaines d'étude
+  - Les établissements
+  - Le genre (F/M)
+- Quelles **structures** et **tendances** émergent des données ?
+:::
+
+## Architecture des données {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+### Modèle en étoile
+
+```{mermaid}
+%%| fig-width: 5
+%%| fig-height: 4
+graph TB
+    A[fact_diplomes<br/>Table principale] --> B[uni_code<br/>Universités]
+    A --> C[etablissement_code<br/>Établissements]
+    A --> D[domaines_code<br/>Domaines]
+    A --> E[diplomes_code<br/>Types de diplômes]
+    style A fill:#3b82f6,stroke:#1e40af,color:#fff
+    style B fill:#10b981,stroke:#059669,color:#fff
+    style C fill:#10b981,stroke:#059669,color:#fff
+    style D fill:#10b981,stroke:#059669,color:#fff
+    style E fill:#10b981,stroke:#059669,color:#fff
+```
+:::
+
+::: {.column width="50%"}
+### Mesures quantitatives
+
+- `diplomes_M` : Hommes
+- `diplomes_F` : Femmes
+- `diplomes_total` : Total
+
+### Dimensions
+
+- 2,083 observations
+- 9 variables finales
+- 4 tables de référence
+:::
+:::
+
+# PARTIE 1 {data-background-gradient="linear-gradient(45deg, #667eea 0%, #764ba2 100%)"}
+
+::: {.r-fit-text}
+Préparation des Données
+:::
+
+## Processus de fusion {.smaller}
+
+::: {.panel-tabset}
+### Étape 1
+**Import des données brutes**
+```{r}
+#| eval: false
+#| echo: true
+fact_diplomes <- read_excel("dataset/raw/fact_diplomes.xls")
+uni_code <- read_excel("dataset/raw/uni_code.xls")
+etablissment_code <- read_excel("dataset/raw/etablissment_code.xls")
+domaines_code <- read_excel("dataset/raw/domaines_code.xls")
+diplomes_code <- read_excel("dataset/raw/diplomes_code.xls")
+```
+
+### Étape 2
+**Jointures successives**
+```{r}
+#| eval: false
+#| echo: true
+data_merged <- fact_diplomes %>%
+  left_join(uni_code, by = c("universite_code" = "code")) %>%
+  left_join(etablissment_code, by = "etablissement_code") %>%
+  left_join(domaines_code, by = "domain_code") %>%
+  left_join(diplomes_code, by = "diplome_code")
+```
+
+### Étape 3
+**Nettoyage final**
+- Suppression des colonnes de codes
+- Conservation uniquement des noms explicites
+- Export vers CSV (dataset/merged/)
+:::
+
+## Statistiques descriptives {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+```{r}
+#| echo: false
+total_diplomes <- sum(diplomes_final$diplomes_total, na.rm = TRUE)
+total_hommes <- sum(diplomes_final$diplomes_M, na.rm = TRUE)
+total_femmes <- sum(diplomes_final$diplomes_F, na.rm = TRUE)
+
+stats_globales <- data.frame(
+  Indicateur = c("Total diplômés", "Hommes", "Femmes", "Ratio F/H"),
+  Valeur = c(
+    format(total_diplomes, big.mark = " "),
+    format(total_hommes, big.mark = " "),
+    format(total_femmes, big.mark = " "),
+    "2.33:1"
+  )
+)
+
+gt(stats_globales) %>%
+  tab_options(
+    table.font.size = px(14),
+    heading.background.color = "#3b82f6",
+    column_labels.background.color = "#3b82f6",
+    column_labels.font.weight = "bold"
+  ) %>%
+  opt_row_striping()
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| echo: false
+stats_entites <- data.frame(
+  Entité = c("Universités", "Établissements", "Domaines", "Types de diplômes"),
+  Nombre = c(
+    n_distinct(diplomes_final$universite_nom),
+    n_distinct(diplomes_final$etablissement_nom),
+    n_distinct(diplomes_final$domaine_nom),
+    n_distinct(diplomes_final$diplome_nom)
+  )
+)
+
+gt(stats_entites) %>%
+  tab_options(
+    table.font.size = px(14),
+    column_labels.background.color = "#10b981",
+    column_labels.font.weight = "bold"
+  ) %>%
+  opt_row_striping()
+```
+:::
+:::
+
+# PARTIE 2 {data-background-gradient="linear-gradient(45deg, #f093fb 0%, #f5576c 100%)"}
+
+::: {.r-fit-text}
+Analyses Statistiques
+:::
+
+::: {.fragment}
+6 axes d'analyse approfondie
+:::
+
+# Axe 1 {data-background="#dc2626"}
+
+::: {.r-fit-text}
+Répartition par Genre
+:::
+
+## Analyse globale F/M {.smaller}
+
+::: {.columns}
+::: {.column width="40%"}
+### Ratio Global
+
+::: {.callout-important icon="false"}
+## 📊 Déséquilibre marqué
+
+**70%** Femmes  
+**30%** Hommes
+
+**Ratio : 2.33:1**
+
+Pour 1 homme diplômé,  
+il y a **2.33 femmes**
+:::
+:::
+
+::: {.column width="60%"}
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 5
+genre_data <- data.frame(
+  Genre = c("Femmes", "Hommes"),
+  Effectif = c(total_femmes, total_hommes),
+  Pourcentage = c(70, 30)
+)
+
+# Utiliser plotly natif pour le pie chart
+plot_ly(genre_data, 
+        labels = ~Genre, 
+        values = ~Effectif, 
+        type = 'pie',
+        textposition = 'inside',
+        textinfo = 'label+percent',
+        insidetextfont = list(color = '#FFFFFF', size = 16),
+        marker = list(colors = c('#ec4899', '#3b82f6'),
+                     line = list(color = '#FFFFFF', width = 2)),
+        hoverinfo = 'text',
+        text = ~paste(Genre, '<br>',
+                     format(Effectif, big.mark = " "), 'diplômés<br>',
+                     Pourcentage, '%')) %>%
+  layout(title = list(text = "Répartition Globale par Genre", 
+                     font = list(size = 16, weight = 'bold')),
+         showlegend = TRUE,
+         legend = list(orientation = 'h', y = -0.1))
+```
+:::
+:::
+
+## Domaines les plus genrés {.smaller .scrollable}
+
+::: {.panel-tabset}
+### Top Féminin 👩‍🎓
+
+```{r}
+#| echo: false
+genre_domaine <- diplomes_final %>%
+  group_by(domaine_nom) %>%
+  summarise(
+    Hommes = sum(diplomes_M),
+    Femmes = sum(diplomes_F),
+    Total = sum(diplomes_total)
+  ) %>%
+  mutate(Pct_Femmes = round((Femmes / Total) * 100, 1)) %>%
+  arrange(desc(Pct_Femmes))
+
+top_fem <- head(genre_domaine %>% select(domaine_nom, Femmes, Hommes, Pct_Femmes), 10)
+
+gt(top_fem) %>%
+  cols_label(
+    domaine_nom = "Domaine",
+    Femmes = "Femmes",
+    Hommes = "Hommes",
+    Pct_Femmes = "% Femmes"
+  ) %>%
+  tab_options(
+    table.font.size = px(12),
+    column_labels.background.color = "#ec4899",
+    column_labels.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "#fce7f3"),
+    locations = cells_body(rows = 1:3)
+  ) %>%
+  fmt_number(columns = c(Femmes, Hommes), decimals = 0) %>%
+  opt_row_striping()
+```
+
+### Top Masculin 👨‍🎓
+
+```{r}
+#| echo: false
+top_masc <- tail(genre_domaine %>% select(domaine_nom, Hommes, Femmes, Pct_Femmes) %>% 
+                   arrange(desc(Pct_Femmes)), 10)
+
+gt(top_masc) %>%
+  cols_label(
+    domaine_nom = "Domaine",
+    Hommes = "Hommes",
+    Femmes = "Femmes",
+    Pct_Femmes = "% Femmes"
+  ) %>%
+  tab_options(
+    table.font.size = px(12),
+    column_labels.background.color = "#3b82f6",
+    column_labels.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "#dbeafe"),
+    locations = cells_body(rows = 1:3)
+  ) %>%
+  fmt_number(columns = c(Hommes, Femmes), decimals = 0) %>%
+  opt_row_striping()
+```
+
+### Visualisation
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 7
+top15 <- genre_domaine %>% arrange(desc(Total)) %>% head(15)
+
+top15_long <- top15 %>%
+  select(domaine_nom, Hommes, Femmes) %>%
+  pivot_longer(cols = c(Hommes, Femmes), names_to = "Genre", values_to = "Effectif")
+
+ggplot(top15_long, aes(x = reorder(domaine_nom, Effectif), y = Effectif, fill = Genre)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  scale_fill_manual(values = c("Hommes" = "#3b82f6", "Femmes" = "#ec4899")) +
+  labs(
+    title = "Répartition H/F par Domaine (Top 15)",
+    x = NULL,
+    y = "Nombre de diplômés"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    legend.position = "top"
+  )
+```
+:::
+
+# Axe 2 {data-background="#f59e0b"}
+
+::: {.r-fit-text}
+Domaines Saturés
+:::
+
+## Concentration de la production {.smaller}
+
+::: {.callout-warning icon="false"}
+## 📈 Analyse de Pareto
+
+**Principe 80/20** : Une minorité de domaines produit la majorité des diplômés
+
+- Les **5 premiers domaines** : ~60% des diplômés
+- Les **10 premiers domaines** : ~85% des diplômés
+:::
+
+## Top 10 Domaines Productifs {.smaller}
+
+```{r}
+#| echo: false
+domaines_production <- diplomes_final %>%
+  group_by(domaine_nom) %>%
+  summarise(Total_diplomes = sum(diplomes_total)) %>%
+  arrange(desc(Total_diplomes)) %>%
+  mutate(
+    Pct = round((Total_diplomes / sum(Total_diplomes)) * 100, 2),
+    Pct_cumule = cumsum(Pct)
+  )
+
+top10_prod <- head(domaines_production, 10)
+
+gt(top10_prod) %>%
+  cols_label(
+    domaine_nom = "Domaine",
+    Total_diplomes = "Total",
+    Pct = "%",
+    Pct_cumule = "% Cumulé"
+  ) %>%
+  tab_options(
+    table.font.size = px(12),
+    column_labels.background.color = "#f59e0b",
+    column_labels.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "#fef3c7"),
+    locations = cells_body(rows = 1:3)
+  ) %>%
+  fmt_number(columns = Total_diplomes, decimals = 0) %>%
+  fmt_number(columns = c(Pct, Pct_cumule), decimals = 2) %>%
+  opt_row_striping()
+```
+
+## Diagramme de Pareto {.smaller}
+
+```{r}
+#| echo: false
+#| fig-width: 12
+#| fig-height: 6
+top15_pareto <- head(domaines_production, 15)
+
+ggplot(top15_pareto, aes(x = reorder(domaine_nom, -Total_diplomes))) +
+  geom_bar(aes(y = Total_diplomes), stat = "identity", fill = "#3b82f6", alpha = 0.7) +
+  geom_line(aes(y = Pct_cumule * max(Total_diplomes) / 100, group = 1), 
+            color = "#dc2626", size = 1.5) +
+  geom_point(aes(y = Pct_cumule * max(Total_diplomes) / 100), 
+             color = "#dc2626", size = 3) +
+  scale_y_continuous(
+    name = "Nombre de diplômés",
+    sec.axis = sec_axis(~. * 100 / max(top15_pareto$Total_diplomes), name = "% Cumulé")
+  ) +
+  labs(
+    title = "Diagramme de Pareto : Concentration de la Production Académique",
+    x = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5)
+  )
+```
+
+# Axe 3 {data-background="#8b5cf6"}
+
+::: {.r-fit-text}
+Performance des Établissements
+:::
+
+## Top 20 Établissements {.smaller .scrollable}
+
+```{r}
+#| echo: false
+etablissements_ranking <- diplomes_final %>%
+  group_by(etablissement_nom, universite_nom) %>%
+  summarise(
+    Total_diplomes = sum(diplomes_total),
+    Nb_domaines = n_distinct(domaine_nom),
+    Nb_specialites = n_distinct(speciality),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(Total_diplomes)) %>%
+  mutate(Rang = row_number())
+
+top20_etab <- head(etablissements_ranking, 20)
+
+gt(top20_etab %>% select(Rang, etablissement_nom, Total_diplomes, Nb_domaines, Nb_specialites)) %>%
+  cols_label(
+    Rang = "#",
+    etablissement_nom = "Établissement",
+    Total_diplomes = "Diplômés",
+    Nb_domaines = "Domaines",
+    Nb_specialites = "Spécialités"
+  ) %>%
+  tab_options(
+    table.font.size = px(11),
+    column_labels.background.color = "#8b5cf6",
+    column_labels.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "#ede9fe"),
+    locations = cells_body(rows = 1:5)
+  ) %>%
+  fmt_number(columns = c(Total_diplomes, Nb_domaines, Nb_specialites), decimals = 0) %>%
+  opt_row_striping()
+```
+
+## Diversité vs Volume {.smaller}
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 6
+top30_etab <- head(etablissements_ranking, 30)
+
+p <- ggplot(top30_etab, aes(x = Nb_domaines, y = Total_diplomes, 
+                             size = Nb_specialites,
+                             color = Total_diplomes,
+                             text = paste0(etablissement_nom, "<br>",
+                                          "Diplômés: ", Total_diplomes, "<br>",
+                                          "Domaines: ", Nb_domaines))) +
+  geom_point(alpha = 0.7) +
+  scale_color_gradient(low = "#60a5fa", high = "#dc2626") +
+  scale_size_continuous(range = c(3, 15)) +
+  labs(
+    title = "Diversité vs Volume de Production (Top 30)",
+    x = "Nombre de domaines",
+    y = "Total de diplômés",
+    size = "Spécialités",
+    color = "Diplômés"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold", size = 14, hjust = 0.5))
+
+ggplotly(p, tooltip = "text")
+```
+
+# Axe 4 {data-background="#10b981"}
+
+::: {.r-fit-text}
+Domaine × Type de Diplôme
+:::
+
+## Analyse croisée {.smaller}
+
+::: {.callout-tip icon="false"}
+## 🔍 Tableaux de contingence
+
+Croisement de deux variables catégorielles pour analyser la structure des diplômes par domaine
+:::
+
+```{r}
+#| echo: false
+domaine_diplome <- diplomes_final %>%
+  group_by(domaine_nom, diplome_nom) %>%
+  summarise(Total = sum(diplomes_total), .groups = "drop") %>%
+  arrange(domaine_nom, desc(Total))
+
+# Top 5 domaines
+top5_domaines <- head(domaines_production$domaine_nom, 5)
+
+analyse_croisee <- domaine_diplome %>%
+  filter(domaine_nom %in% top5_domaines) %>%
+  group_by(domaine_nom) %>%
+  mutate(Pct = round((Total / sum(Total)) * 100, 1)) %>%
+  arrange(domaine_nom, desc(Total)) %>%
+  slice(1:3)
+```
+
+## Structure par domaine (Top 5) {.smaller .scrollable}
+
+::: {.panel-tabset}
+
+```{r}
+#| echo: false
+#| results: asis
+for(dom in top5_domaines) {
+  cat("\n### ", dom, "\n\n")
+  subset_dom <- analyse_croisee %>% 
+    filter(domaine_nom == dom) %>%
+    select(diplome_nom, Total, Pct)
+  
+  print(gt(subset_dom) %>%
+    cols_label(
+      diplome_nom = "Type de diplôme",
+      Total = "Total",
+      Pct = "%"
+    ) %>%
+    fmt_number(columns = Total, decimals = 0) %>%
+    opt_row_striping())
+  cat("\n\n")
+}
+```
+
+:::
+
+# Axe 5 {data-background="#06b6d4"}
+
+::: {.r-fit-text}
+Analyse Multivariée
+:::
+
+## ACP : Principe {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+### Qu'est-ce que l'ACP ?
+
+::: {.incremental}
+- **Réduction de dimensionnalité**
+- Transformation de variables corrélées en variables non corrélées (composantes principales)
+- Visualisation en 2D de données multidimensionnelles
+- Identification de profils similaires
+:::
+:::
+
+::: {.column width="50%"}
+### Variables analysées
+
+::: {.callout-note icon="false"}
+Pour chaque domaine :
+
+- % Femmes / % Hommes
+- Total diplômés
+- Nb types de diplômes
+- Nb spécialités
+- Nb établissements
+:::
+:::
+:::
+
+## Résultats ACP {.smaller}
+
+```{r}
+#| echo: false
+#| include: false
+pca_data <- diplomes_final %>%
+  group_by(domaine_nom) %>%
+  summarise(
+    Total_diplomes = sum(diplomes_total),
+    Pct_Femmes = (sum(diplomes_F) / sum(diplomes_total)) * 100,
+    Pct_Hommes = (sum(diplomes_M) / sum(diplomes_total)) * 100,
+    Nb_types_diplomes = n_distinct(diplome_nom),
+    Nb_specialites = n_distinct(speciality),
+    Nb_etablissements = n_distinct(etablissement_nom)
+  ) %>%
+  filter(Total_diplomes > 100)
+
+pca_matrix <- pca_data %>% 
+  select(-domaine_nom) %>%
+  as.data.frame()
+
+rownames(pca_matrix) <- pca_data$domaine_nom
+
+pca_result <- prcomp(pca_matrix, scale. = TRUE, center = TRUE)
+variance_expliquee <- (pca_result$sdev^2 / sum(pca_result$sdev^2)) * 100
+```
+
+::: {.columns}
+::: {.column width="50%"}
+### Variance expliquée
+
+```{r}
+#| echo: false
+variance_df <- data.frame(
+  Composante = paste0("PC", 1:6),
+  Variance = round(variance_expliquee[1:6], 2)
+)
+
+gt(variance_df) %>%
+  cols_label(
+    Composante = "Composante",
+    Variance = "% Variance"
+  ) %>%
+  tab_options(
+    table.font.size = px(12),
+    column_labels.background.color = "#06b6d4",
+    column_labels.font.weight = "bold"
+  ) %>%
+  tab_style(
+    style = cell_fill(color = "#cffafe"),
+    locations = cells_body(rows = 1:2)
+  ) %>%
+  fmt_number(columns = Variance, decimals = 2) %>%
+  opt_row_striping()
+```
+
+::: {.callout-important icon="false"}
+PC1 + PC2 capturent **~86%** de la variance totale
+:::
+:::
+
+::: {.column width="50%"}
+```{r}
+#| echo: false
+#| fig-width: 5
+#| fig-height: 4
+variance_df_plot <- data.frame(
+  PC = factor(paste0("PC", 1:6), levels = paste0("PC", 1:6)),
+  Variance = variance_expliquee[1:6]
+)
+
+ggplot(variance_df_plot, aes(x = PC, y = Variance, fill = Variance)) +
+  geom_bar(stat = "identity") +
+  scale_fill_gradient(low = "#67e8f9", high = "#0891b2") +
+  labs(
+    title = "Scree Plot",
+    y = "% Variance expliquée",
+    x = "Composante"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+:::
+:::
+
+## Biplot ACP {.smaller}
+
+```{r}
+#| echo: false
+#| fig-width: 11
+#| fig-height: 7
+pca_scores <- as.data.frame(pca_result$x[, 1:2])
+pca_scores$domaine <- rownames(pca_scores)
+
+ggplot(pca_scores, aes(x = PC1, y = PC2)) +
+  geom_point(size = 4, color = "#06b6d4", alpha = 0.7) +
+  geom_text(aes(label = domaine), size = 3, hjust = 0.5, vjust = -0.8, check_overlap = TRUE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray40", linewidth = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray40", linewidth = 0.5) +
+  labs(
+    title = "ACP : Profils des Domaines",
+    subtitle = sprintf("PC1 (%.1f%%) vs PC2 (%.1f%%)", variance_expliquee[1], variance_expliquee[2]),
+    x = sprintf("Composante Principale 1 (%.1f%%)", variance_expliquee[1]),
+    y = sprintf("Composante Principale 2 (%.1f%%)", variance_expliquee[2])
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5)
+  )
+```
+
+## Clustering K-means {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+### Principe
+
+::: {.incremental}
+- **Segmentation automatique**
+- Regroupement par similarité
+- k=4 clusters identifiés
+- Minimisation variance intra-cluster
+:::
+:::
+
+::: {.column width="50%"}
+```{r}
+#| echo: false
+set.seed(123)
+kmeans_result <- kmeans(scale(pca_matrix), centers = 4, nstart = 25)
+pca_data$Cluster <- as.factor(kmeans_result$cluster)
+
+profils_clusters <- pca_data %>%
+  group_by(Cluster) %>%
+  summarise(
+    N = n(),
+    Moy_Diplomes = round(mean(Total_diplomes)),
+    Moy_Femmes = round(mean(Pct_Femmes), 1)
+  )
+
+gt(profils_clusters) %>%
+  cols_label(
+    Cluster = "Cluster",
+    N = "N",
+    Moy_Diplomes = "Moy Dip.",
+    Moy_Femmes = "% F"
+  ) %>%
+  tab_options(
+    table.font.size = px(12),
+    column_labels.background.color = "#06b6d4",
+    column_labels.font.weight = "bold"
+  ) %>%
+  fmt_number(columns = Moy_Diplomes, decimals = 0) %>%
+  fmt_number(columns = Moy_Femmes, decimals = 1) %>%
+  opt_row_striping()
+```
+:::
+:::
+
+## ACP avec Clusters {.smaller}
+
+```{r}
+#| echo: false
+#| fig-width: 11
+#| fig-height: 7
+pca_scores$Cluster <- pca_data$Cluster
+
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = Cluster)) +
+  geom_point(size = 5, alpha = 0.8) +
+  geom_text(aes(label = domaine), size = 3, hjust = 0.5, vjust = -0.9, check_overlap = TRUE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray40", linewidth = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray40", linewidth = 0.5) +
+  scale_color_brewer(palette = "Set1") +
+  labs(
+    title = "ACP avec Clustering K-means (k=4)",
+    subtitle = "Regroupement automatique des domaines par profil similaire",
+    x = sprintf("PC1 (%.1f%%)", variance_expliquee[1]),
+    y = sprintf("PC2 (%.1f%%)", variance_expliquee[2])
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    legend.position = "right"
+  )
+```
+
+# Axe 6 {data-background="#ef4444"}
+
+::: {.r-fit-text}
+Mismatch Académique
+:::
+
+## Concept de Mismatch {.smaller}
+
+::: {.callout-warning icon="false"}
+## ⚠️ Décalage Offre/Demande
+
+**Mismatch académique** : Déséquilibre entre la production de diplômés et les besoins du marché du travail
+:::
+
+::: {.columns}
+::: {.column width="50%"}
+### Risques identifiés
+
+::: {.incremental}
+- Concentration excessive
+- Surproduction dans certains domaines
+- Sous-représentation de domaines émergents
+- Inadéquation formation-emploi
+:::
+:::
+
+::: {.column width="50%"}
+### Conséquences
+
+::: {.incremental}
+- Chômage des diplômés
+- Pénurie de compétences
+- Gaspillage de ressources
+- Frustration sociale
+:::
+:::
+:::
+
+## Indice de concentration {.smaller}
+
+```{r}
+#| echo: false
+mismatch_analyse <- domaines_production %>%
+  mutate(
+    Risque = case_when(
+      Pct > 15 ~ "Élevé",
+      Pct > 10 ~ "Moyen",
+      Pct > 5 ~ "Faible",
+      TRUE ~ "Minimal"
+    )
+  )
+
+indice_herfindahl <- sum((mismatch_analyse$Pct / 100)^2)
+```
+
+::: {.columns}
+::: {.column width="50%"}
+::: {.callout-important icon="false"}
+## 📊 Indice Herfindahl-Hirschman
+
+**HHI = `r round(indice_herfindahl, 4)`**
+
+::: {.fragment}
+✅ Interprétation : **`r ifelse(indice_herfindahl > 0.15, "FORTE concentration", ifelse(indice_herfindahl > 0.10, "Concentration MODÉRÉE", "Faible concentration"))`**
+:::
+:::
+:::
+
+::: {.column width="50%"}
+### Domaines à risque
+
+```{r}
+#| echo: false
+domaines_risque <- mismatch_analyse %>% filter(Pct > 10)
+
+gt(domaines_risque %>% select(domaine_nom, Total_diplomes, Pct, Risque) %>% head(5)) %>%
+  cols_label(
+    domaine_nom = "Domaine",
+    Total_diplomes = "Total",
+    Pct = "%",
+    Risque = "Risque"
+  ) %>%
+  tab_options(
+    table.font.size = px(12),
+    column_labels.background.color = "#ef4444",
+    column_labels.font.weight = "bold"
+  ) %>%
+  fmt_number(columns = Total_diplomes, decimals = 0) %>%
+  fmt_number(columns = Pct, decimals = 2) %>%
+  opt_row_striping()
+```
+:::
+:::
+
+## Recommandations stratégiques {.smaller}
+
+::: {.columns}
+::: {.column width="33%"}
+### 🎯 Points d'attention
+
+- Les **`r nrow(domaines_risque)` premiers domaines** = **`r round(sum(domaines_risque$Pct), 1)`%** des diplômés
+- Risque de saturation
+- Diversification à renforcer
+:::
+
+::: {.column width="33%"}
+### 💼 Emploi
+
+- Surproduction potentielle
+- Études sectorielles nécessaires
+- Réorientation vers domaines en demande
+:::
+
+::: {.column width="33%"}
+### 📋 Politiques
+
+- Ajuster quotas d'admission
+- Promouvoir filières sous-représentées
+- Orientation vers métiers d'avenir
+:::
+:::
+
+# Synthèse Générale {data-background-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"}
+
+## Principaux résultats {.smaller}
+
+::: {.incremental}
+1. **Déséquilibre de genre** : Ratio F/H de 2.33:1, domaines fortement genrés
+2. **Concentration importante** : Top 10 domaines = 85% de la production
+3. **Établissements hétérogènes** : Profils variés (spécialisés vs polyvalents)
+4. **Structure des diplômes** : Distribution inégale selon domaines
+5. **Profils distincts** : 4 clusters de domaines identifiés par ACP
+6. **Risque de mismatch** : Surproduction dans certains domaines
+:::
+
+## Implications {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+### Pour les décideurs 🏛️
+
+- Ajuster l'offre de formation
+- Équilibrer la production
+- Anticiper les besoins
+- Optimiser les ressources
+:::
+
+::: {.column width="50%"}
+### Pour les étudiants 🎓
+
+- Meilleure orientation
+- Connaissance du marché
+- Choix éclairés
+- Perspectives d'emploi
+:::
+:::
+
+## Limites et perspectives {.smaller}
+
+::: {.callout-note icon="false"}
+## 🔬 Limites de l'étude
+
+- Données ponctuelles (pas d'évolution temporelle)
+- Pas d'indicateurs d'employabilité
+- Absence de données sur le marché du travail
+:::
+
+::: {.callout-tip icon="false"}
+## 🚀 Perspectives futures
+
+- Analyse longitudinale (évolution sur plusieurs années)
+- Croisement avec données d'emploi
+- Étude de l'insertion professionnelle
+- Modèles prédictifs
+:::
+
+## {.center data-background="#1e3a8a"}
+
+::: {.r-fit-text}
+**Merci pour votre attention !**
+:::
+
+::: {.fragment}
+### Questions ?
+:::
+
+::: {.fragment}
+**Abderrahmen Youssef**  
+Groupe DS4  
+Décembre 2025
+:::
+
+## Annexes {.smaller .scrollable}
+
+### Méthodes statistiques utilisées
+
+1. **Analyse descriptive** : Moyennes, pourcentages, distributions
+2. **Tableaux croisés** : Contingence entre variables catégorielles
+3. **ACP** : Réduction dimensionnalité, identification profils
+4. **K-means** : Clustering automatique, segmentation
+5. **Indices de concentration** : Pareto, Herfindahl
+
+### Technologies
+
+- **R** : Analyse statistique
+- **dplyr/tidyr** : Manipulation données
+- **ggplot2/plotly** : Visualisations
+- **Quarto** : Présentation interactive
+
+---
+
+## Bibliographie {.smaller}
+
+- Données : Ministère de l'Enseignement Supérieur et de la Recherche Scientifique (Tunisie)
+- Méthodes ACP : Husson, F., Lê, S., & Pagès, J. (2017). *Exploratory Multivariate Analysis by Example Using R*
+- Clustering : James, G. et al. (2013). *An Introduction to Statistical Learning*
+- Visualisation : Wickham, H. (2016). *ggplot2: Elegant Graphics for Data Analysis*
