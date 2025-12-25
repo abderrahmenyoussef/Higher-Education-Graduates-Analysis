@@ -2,7 +2,6 @@
 
 [![Quarto](https://img.shields.io/badge/Made%20with-Quarto-blue.svg)](https://quarto.org/)
 [![R](https://img.shields.io/badge/R-276DC3?logo=r&logoColor=white)](https://www.r-project.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > Analyse approfondie de la répartition des 55,670 diplômés de l'enseignement supérieur public en Tunisie (2021-2022)
 
