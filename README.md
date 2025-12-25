@@ -5,6 +5,8 @@
 
 > Analyse approfondie de la répartition des 55,670 diplômés de l'enseignement supérieur public en Tunisie (2021-2022)
 
+Version Live : https://abderrahmenyoussef.github.io/Higher-Education-Graduates-Analysis
+
 ## 🎯 Objectifs du Projet
 
 Ce projet présente une analyse statistique complète et interactive de la production de diplômés en Tunisie, structurée autour de **6 axes d'analyse** :
