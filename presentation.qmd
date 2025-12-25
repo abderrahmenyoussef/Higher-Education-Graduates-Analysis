@@ -2,7 +2,7 @@
 title: "Analyse Statistique des Diplômés"
 subtitle: "Enseignement Supérieur Public Tunisien"
 author: "Abderrahmen Youssef - Groupe DS4"
-date: "Décembre 2025"
+date: "07 Janvier 2026"
 format:
   revealjs:
     theme: [default, custom.scss]
@@ -39,6 +39,7 @@ library(ggplot2)
 library(knitr)
 library(gt)
 library(plotly)
+library(DT)  # Pour tableaux interactifs filtrables
 
 # Définir le thème par défaut
 theme_set(theme_minimal(base_size = 12))
@@ -49,15 +50,15 @@ diplomes_final <- read.csv("dataset/merged/diplomes_fusionnes.csv", encoding = "
 
 ## {.center data-background="#1e3a8a"}
 
-::: {.r-fit-text}
+::: {.r-fit-text style="color: white;"}
 **Comprendre la production de diplômés en Tunisie**
 :::
 
-::: {.fragment}
+::: {.fragment style="color: white; font-size: 1.3em;"}
 Analyse par domaines, spécialités et établissements
 :::
 
-::: {.fragment}
+::: {.fragment style="color: white; font-size: 1.2em;"}
 📊 55,670 diplômés | 14 universités | 22 domaines
 :::
 
@@ -81,8 +82,8 @@ Analyse par domaines, spécialités et établissements
 ### Modèle en étoile
 
 ```{mermaid}
-%%| fig-width: 5
-%%| fig-height: 4
+%%| fig-width: 8
+%%| fig-height: 6
 graph TB
     A[fact_diplomes<br/>Table principale] --> B[uni_code<br/>Universités]
     A --> C[etablissement_code<br/>Établissements]
@@ -113,8 +114,22 @@ graph TB
 
 # PARTIE 1 {data-background-gradient="linear-gradient(45deg, #667eea 0%, #764ba2 100%)"}
 
-::: {.r-fit-text}
+::: {.r-fit-text style="color: white;"}
 Préparation des Données
+:::
+
+## Source des données {.smaller}
+
+::: {.callout-note icon="false"}
+## 📂 Provenance des données
+
+**Source :** [Catalogue Open Data Tunisie](https://catalog.data.gov.tn/fr/dataset/les-etudiants-diplomes-des-universites-en-2021-2022)
+
+- **Jeu de données :** Les étudiants diplômés des universités
+- **Année académique :** 2021-2022
+- **Date de création :** 18 Février 2024
+- **Dernière modification :** 5 Mars 2024
+- **Organisme :** Ministère de l'Enseignement Supérieur et de la Recherche Scientifique (Tunisie)
 :::
 
 ## Processus de fusion {.smaller}
@@ -153,14 +168,17 @@ data_merged <- fact_diplomes %>%
 
 ## Statistiques descriptives {.smaller}
 
-::: {.columns}
-::: {.column width="50%"}
 ```{r}
 #| echo: false
 total_diplomes <- sum(diplomes_final$diplomes_total, na.rm = TRUE)
 total_hommes <- sum(diplomes_final$diplomes_M, na.rm = TRUE)
 total_femmes <- sum(diplomes_final$diplomes_F, na.rm = TRUE)
+```
 
+::: {.columns}
+::: {.column width="50%"}
+```{r}
+#| echo: false
 stats_globales <- data.frame(
   Indicateur = c("Total diplômés", "Hommes", "Femmes", "Ratio F/H"),
   Valeur = c(
@@ -173,10 +191,16 @@ stats_globales <- data.frame(
 
 gt(stats_globales) %>%
   tab_options(
-    table.font.size = px(14),
+    table.font.size = px(20),
+    table.width = pct(100),
     heading.background.color = "#3b82f6",
     column_labels.background.color = "#3b82f6",
-    column_labels.font.weight = "bold"
+    column_labels.font.weight = "bold",
+    column_labels.font.size = px(18)
+  ) %>%
+  tab_style(
+    style = cell_text(size = px(18)),
+    locations = cells_body()
   ) %>%
   opt_row_striping()
 ```
@@ -197,9 +221,15 @@ stats_entites <- data.frame(
 
 gt(stats_entites) %>%
   tab_options(
-    table.font.size = px(14),
+    table.font.size = px(20),
+    table.width = pct(100),
     column_labels.background.color = "#10b981",
-    column_labels.font.weight = "bold"
+    column_labels.font.weight = "bold",
+    column_labels.font.size = px(18)
+  ) %>%
+  tab_style(
+    style = cell_text(size = px(18)),
+    locations = cells_body()
   ) %>%
   opt_row_striping()
 ```
@@ -208,18 +238,90 @@ gt(stats_entites) %>%
 
 # PARTIE 2 {data-background-gradient="linear-gradient(45deg, #f093fb 0%, #f5576c 100%)"}
 
-::: {.r-fit-text}
+::: {.r-fit-text style="color: white;"}
 Analyses Statistiques
 :::
 
-::: {.fragment}
+::: {.fragment style="color: white;"}
 6 axes d'analyse approfondie
 :::
 
+## Explorateur de Données Interactif {.smaller .scrollable}
+
+::: {.callout-note icon="false"}
+## 📊 Tableau filtrable et interactif
+
+Explorez l'ensemble des données : filtrez par domaine, établissement, diplôme...
+:::
+
+```{r}
+#| echo: false
+#| out.width: "100%"
+# Préparer les données pour le tableau interactif
+tableau_interactif <- diplomes_final %>%
+  select(
+    Établissement = etablissement_nom,
+    Domaine = domaine_nom,
+    Diplôme = diplome_nom,
+    Hommes = diplomes_M,
+    Femmes = diplomes_F,
+    Total = diplomes_total
+  )
+
+# Créer le tableau interactif avec DT - version simplifiée
+datatable(
+  tableau_interactif,
+  filter = 'top',
+  options = list(
+    pageLength = 10,
+    scrollX = FALSE,
+    autoWidth = FALSE,
+    dom = 'frtip',
+    language = list(
+      search = "Rechercher :",
+      lengthMenu = "Afficher _MENU_",
+      info = "_START_ à _END_ / _TOTAL_",
+      paginate = list(
+        first = "«",
+        last = "»",
+        `next` = "›",
+        previous = "‹"
+      ),
+      zeroRecords = "Aucun résultat",
+      infoEmpty = "0 donnée",
+      infoFiltered = "(filtré de _MAX_)"
+    )
+  ),
+  class = 'display compact stripe',
+  rownames = FALSE,
+  style = 'bootstrap4'
+) %>%
+  formatStyle(
+    'Total',
+    background = styleColorBar(range(tableau_interactif$Total), '#3b82f6'),
+    backgroundSize = '85% 75%',
+    backgroundRepeat = 'no-repeat',
+    backgroundPosition = 'center'
+  ) %>%
+  formatStyle(
+    columns = 1:6,
+    fontSize = '15px'
+  ) %>%
+  formatStyle(
+    0,
+    target = 'row',
+    lineHeight = '140%'
+  )
+```
+
 # Axe 1 {data-background="#dc2626"}
 
-::: {.r-fit-text}
+::: {.r-fit-text style="color: white;"}
 Répartition par Genre
+:::
+
+::: {.fragment style="color: white; font-size: 1.2em;"}
+**Questions :** Quel est le déséquilibre F/M ? Quels domaines sont les plus genrés ?
 :::
 
 ## Analyse globale F/M {.smaller}
@@ -282,6 +384,7 @@ plot_ly(genre_data,
 ```{r}
 #| echo: false
 genre_domaine <- diplomes_final %>%
+  filter(!is.na(domaine_nom)) %>%
   group_by(domaine_nom) %>%
   summarise(
     Hommes = sum(diplomes_M),
@@ -301,12 +404,14 @@ gt(top_fem) %>%
     Pct_Femmes = "% Femmes"
   ) %>%
   tab_options(
-    table.font.size = px(12),
+    table.font.size = px(14),
+    table.width = pct(100),
     column_labels.background.color = "#ec4899",
-    column_labels.font.weight = "bold"
+    column_labels.font.weight = "bold",
+    column_labels.font.size = px(16)
   ) %>%
   tab_style(
-    style = cell_fill(color = "#fce7f3"),
+    style = list(cell_fill(color = "#fce7f3"), cell_text(weight = "bold")),
     locations = cells_body(rows = 1:3)
   ) %>%
   fmt_number(columns = c(Femmes, Hommes), decimals = 0) %>%
@@ -317,23 +422,28 @@ gt(top_fem) %>%
 
 ```{r}
 #| echo: false
-top_masc <- tail(genre_domaine %>% select(domaine_nom, Hommes, Femmes, Pct_Femmes) %>% 
-                   arrange(desc(Pct_Femmes)), 10)
+top_masc <- genre_domaine %>% 
+  arrange(Pct_Femmes) %>%
+  head(10) %>%
+  mutate(Pct_Hommes = round((Hommes / Total) * 100, 1)) %>%
+  select(domaine_nom, Hommes, Femmes, Pct_Hommes)
 
 gt(top_masc) %>%
   cols_label(
     domaine_nom = "Domaine",
     Hommes = "Hommes",
     Femmes = "Femmes",
-    Pct_Femmes = "% Femmes"
+    Pct_Hommes = "% Hommes"
   ) %>%
   tab_options(
-    table.font.size = px(12),
+    table.font.size = px(14),
+    table.width = pct(100),
     column_labels.background.color = "#3b82f6",
-    column_labels.font.weight = "bold"
+    column_labels.font.weight = "bold",
+    column_labels.font.size = px(16)
   ) %>%
   tab_style(
-    style = cell_fill(color = "#dbeafe"),
+    style = list(cell_fill(color = "#dbeafe"), cell_text(weight = "bold")),
     locations = cells_body(rows = 1:3)
   ) %>%
   fmt_number(columns = c(Hommes, Femmes), decimals = 0) %>%
@@ -352,7 +462,9 @@ top15_long <- top15 %>%
   select(domaine_nom, Hommes, Femmes) %>%
   pivot_longer(cols = c(Hommes, Femmes), names_to = "Genre", values_to = "Effectif")
 
-ggplot(top15_long, aes(x = reorder(domaine_nom, Effectif), y = Effectif, fill = Genre)) +
+p <- ggplot(top15_long, aes(x = reorder(domaine_nom, Effectif), y = Effectif, fill = Genre,
+                            text = paste0(domaine_nom, "<br>",
+                                         Genre, ": ", format(Effectif, big.mark = " "), " diplômés"))) +
   geom_bar(stat = "identity") +
   coord_flip() +
   scale_fill_manual(values = c("Hommes" = "#3b82f6", "Femmes" = "#ec4899")) +
@@ -366,27 +478,49 @@ ggplot(top15_long, aes(x = reorder(domaine_nom, Effectif), y = Effectif, fill = 
     plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
     legend.position = "top"
   )
+
+ggplotly(p, tooltip = "text")
 ```
 :::
 
 # Axe 2 {data-background="#f59e0b"}
 
-::: {.r-fit-text}
+::: {.r-fit-text style="color: white;"}
 Domaines Saturés
+:::
+
+::: {.fragment style="color: white; font-size: 1.2em;"}
+**Questions :** Quels domaines produisent le plus ? Y a-t-il une concentration excessive ?
 :::
 
 ## Concentration de la production {.smaller}
 
 ::: {.callout-warning icon="false"}
-## 📈 Analyse de Pareto
+## 📈 Qu'est-ce que l'Analyse de Pareto ?
 
-**Principe 80/20** : Une minorité de domaines produit la majorité des diplômés
+**Le diagramme de Pareto** est un outil statistique qui combine :
+- **Barres** : Effectifs décroissants
+- **Courbe cumulative** : % cumulé de 0% à 100%
 
+**Principe 80/20** : Identifier les éléments les plus importants
+- Si 20% des domaines produisent 80% des diplômés → **Forte concentration**
+
+**Dans notre cas :**
 - Les **5 premiers domaines** : ~60% des diplômés
 - Les **10 premiers domaines** : ~85% des diplômés
+
+✅ **Utilité** : Identifier où concentrer les efforts et détecter les risques de surproduction
 :::
 
 ## Top 10 Domaines Productifs {.smaller}
+
+::: {.callout-tip icon="false"}
+**Lecture du tableau :**
+- **Domaine** : Nom du domaine d'étude
+- **Total** : Nombre total de diplômés
+- **%** : Part de ce domaine dans la production totale
+- **% Cumulé** : Somme des % depuis le 1er domaine (atteint 100% au dernier)
+:::
 
 ```{r}
 #| echo: false
@@ -404,21 +538,27 @@ top10_prod <- head(domaines_production, 10)
 gt(top10_prod) %>%
   cols_label(
     domaine_nom = "Domaine",
-    Total_diplomes = "Total",
-    Pct = "%",
+    Total_diplomes = "Total diplômés",
+    Pct = "% du total",
     Pct_cumule = "% Cumulé"
   ) %>%
   tab_options(
-    table.font.size = px(12),
+    table.font.size = px(16),
+    table.width = pct(100),
     column_labels.background.color = "#f59e0b",
-    column_labels.font.weight = "bold"
+    column_labels.font.weight = "bold",
+    column_labels.font.size = px(18)
   ) %>%
   tab_style(
-    style = cell_fill(color = "#fef3c7"),
+    style = list(cell_fill(color = "#fef3c7"), cell_text(weight = "bold", size = px(16))),
     locations = cells_body(rows = 1:3)
   ) %>%
+  tab_style(
+    style = cell_text(size = px(16)),
+    locations = cells_body()
+  ) %>%
   fmt_number(columns = Total_diplomes, decimals = 0) %>%
-  fmt_number(columns = c(Pct, Pct_cumule), decimals = 2) %>%
+  fmt_number(columns = c(Pct, Pct_cumule), decimals = 1, pattern = "{x}%") %>%
   opt_row_striping()
 ```
 
@@ -453,8 +593,12 @@ ggplot(top15_pareto, aes(x = reorder(domaine_nom, -Total_diplomes))) +
 
 # Axe 3 {data-background="#8b5cf6"}
 
-::: {.r-fit-text}
+::: {.r-fit-text style="color: white;"}
 Performance des Établissements
+:::
+
+::: {.fragment style="color: white; font-size: 1.2em;"}
+**Questions :** Quels établissements produisent le plus ? Sont-ils spécialisés ou polyvalents ?
 :::
 
 ## Top 20 Établissements {.smaller .scrollable}
@@ -462,6 +606,7 @@ Performance des Établissements
 ```{r}
 #| echo: false
 etablissements_ranking <- diplomes_final %>%
+  filter(!is.na(etablissement_nom)) %>%
   group_by(etablissement_nom, universite_nom) %>%
   summarise(
     Total_diplomes = sum(diplomes_total),
@@ -483,13 +628,19 @@ gt(top20_etab %>% select(Rang, etablissement_nom, Total_diplomes, Nb_domaines, N
     Nb_specialites = "Spécialités"
   ) %>%
   tab_options(
-    table.font.size = px(11),
+    table.font.size = px(15),
+    table.width = pct(100),
     column_labels.background.color = "#8b5cf6",
-    column_labels.font.weight = "bold"
+    column_labels.font.weight = "bold",
+    column_labels.font.size = px(17)
   ) %>%
   tab_style(
-    style = cell_fill(color = "#ede9fe"),
+    style = list(cell_fill(color = "#ede9fe"), cell_text(weight = "bold", size = px(15))),
     locations = cells_body(rows = 1:5)
+  ) %>%
+  tab_style(
+    style = cell_text(size = px(14)),
+    locations = cells_body()
   ) %>%
   fmt_number(columns = c(Total_diplomes, Nb_domaines, Nb_specialites), decimals = 0) %>%
   opt_row_striping()
@@ -527,16 +678,33 @@ ggplotly(p, tooltip = "text")
 
 # Axe 4 {data-background="#10b981"}
 
-::: {.r-fit-text}
+::: {.r-fit-text style="color: white;"}
 Domaine × Type de Diplôme
+:::
+
+::: {.fragment style="color: white; font-size: 1.2em;"}
+**Questions :** Quelle est la structure des diplômes par domaine ? Licence, Master, Doctorat ?
 :::
 
 ## Analyse croisée {.smaller}
 
 ::: {.callout-tip icon="false"}
-## 🔍 Tableaux de contingence
+## 🔍 Qu'est-ce qu'un tableau de contingence ?
 
-Croisement de deux variables catégorielles pour analyser la structure des diplômes par domaine
+**Tableau croisé** = Croisement de 2 variables catégorielles
+
+**Colonnes de notre tableau :**
+- **Type de diplôme** : Licence, Master professionnel, Ingénieur, Doctorat, etc.
+- **Total** : Nombre de diplômés pour ce type
+- **%** : Part de ce type dans le domaine
+
+**Pourquoi c'est utile ?**
+- Voir si un domaine produit surtout des Licences ou des Masters
+- Identifier les domaines avec peu de Masters/Doctorats
+- Comprendre la structure académique de chaque domaine
+
+**Comment lire ?**  
+Pour chaque domaine, on voit les 3 types de diplômes les plus fréquents avec leur pourcentage.
 :::
 
 ```{r}
@@ -576,6 +744,14 @@ for(dom in top5_domaines) {
       Total = "Total",
       Pct = "%"
     ) %>%
+    tab_options(
+      table.font.size = px(16),
+      table.width = pct(100)
+    ) %>%
+    tab_style(
+      style = cell_text(size = px(16)),
+      locations = cells_body()
+    ) %>%
     fmt_number(columns = Total, decimals = 0) %>%
     opt_row_striping())
   cat("\n\n")
@@ -586,8 +762,12 @@ for(dom in top5_domaines) {
 
 # Axe 5 {data-background="#06b6d4"}
 
-::: {.r-fit-text}
+::: {.r-fit-text style="color: white;"}
 Analyse Multivariée
+:::
+
+::: {.fragment style="color: white; font-size: 1.2em;"}
+**Questions :** Peut-on regrouper les domaines similaires ? Y a-t-il des profils types ?
 :::
 
 ## ACP : Principe {.smaller}
@@ -663,13 +843,19 @@ gt(variance_df) %>%
     Variance = "% Variance"
   ) %>%
   tab_options(
-    table.font.size = px(12),
+    table.font.size = px(18),
+    table.width = pct(100),
     column_labels.background.color = "#06b6d4",
-    column_labels.font.weight = "bold"
+    column_labels.font.weight = "bold",
+    column_labels.font.size = px(20)
   ) %>%
   tab_style(
-    style = cell_fill(color = "#cffafe"),
+    style = list(cell_fill(color = "#cffafe"), cell_text(weight = "bold", size = px(18))),
     locations = cells_body(rows = 1:2)
+  ) %>%
+  tab_style(
+    style = cell_text(size = px(18)),
+    locations = cells_body()
   ) %>%
   fmt_number(columns = Variance, decimals = 2) %>%
   opt_row_striping()
@@ -768,9 +954,15 @@ gt(profils_clusters) %>%
     Moy_Femmes = "% F"
   ) %>%
   tab_options(
-    table.font.size = px(12),
+    table.font.size = px(20),
+    table.width = pct(100),
     column_labels.background.color = "#06b6d4",
-    column_labels.font.weight = "bold"
+    column_labels.font.weight = "bold",
+    column_labels.font.size = px(22)
+  ) %>%
+  tab_style(
+    style = cell_text(size = px(20)),
+    locations = cells_body()
   ) %>%
   fmt_number(columns = Moy_Diplomes, decimals = 0) %>%
   fmt_number(columns = Moy_Femmes, decimals = 1) %>%
@@ -809,8 +1001,12 @@ ggplot(pca_scores, aes(x = PC1, y = PC2, color = Cluster)) +
 
 # Axe 6 {data-background="#ef4444"}
 
-::: {.r-fit-text}
+::: {.r-fit-text style="color: white;"}
 Mismatch Académique
+:::
+
+::: {.fragment style="color: white; font-size: 1.2em;"}
+**Questions :** Y a-t-il surproduction ? Quels risques pour l'emploi ?
 :::
 
 ## Concept de Mismatch {.smaller}
@@ -890,12 +1086,18 @@ gt(domaines_risque %>% select(domaine_nom, Total_diplomes, Pct, Risque) %>% head
     Risque = "Risque"
   ) %>%
   tab_options(
-    table.font.size = px(12),
+    table.font.size = px(16),
+    table.width = pct(100),
     column_labels.background.color = "#ef4444",
-    column_labels.font.weight = "bold"
+    column_labels.font.weight = "bold",
+    column_labels.font.size = px(18)
+  ) %>%
+  tab_style(
+    style = cell_text(size = px(16)),
+    locations = cells_body()
   ) %>%
   fmt_number(columns = Total_diplomes, decimals = 0) %>%
-  fmt_number(columns = Pct, decimals = 2) %>%
+  fmt_number(columns = Pct, decimals = 1, pattern = "{x}%") %>%
   opt_row_striping()
 ```
 :::
@@ -996,7 +1198,7 @@ gt(domaines_risque %>% select(domaine_nom, Total_diplomes, Pct, Risque) %>% head
 ::: {.fragment}
 **Abderrahmen Youssef**  
 Groupe DS4  
-Décembre 2025
+07 Janvier 2026
 :::
 
 ## Annexes {.smaller .scrollable}
