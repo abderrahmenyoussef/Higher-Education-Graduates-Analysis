@@ -5,6 +5,7 @@ author: "Abderrahmen Youssef - Groupe DS4"
 date: "07 Janvier 2026"
 format:
   revealjs:
+    output-file: index.html
     theme: [default, custom.scss]
     transition: slide
     background-transition: fade
